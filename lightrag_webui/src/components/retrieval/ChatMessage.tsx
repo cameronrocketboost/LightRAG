@@ -1,4 +1,6 @@
-import { ReactNode, useCallback, useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
+import { CheckIcon, MessageCircleIcon, UserIcon } from 'lucide-react'
+import { useState, useCallback, useMemo, useRef, memo, ReactNode } from 'react'
 import { Message } from '@/api/lightrag'
 import useTheme from '@/hooks/useTheme'
 import Button from '@/components/ui/Button'
@@ -15,81 +17,105 @@ import type { Element } from 'hast'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
-import { LoaderIcon, CopyIcon, User, Cog } from 'lucide-react'
+import { LoaderIcon, CopyIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 
-export type MessageWithError = Message & {
+export interface MessageWithError extends Message {
+  id?: string
   isError?: boolean
+  mermaidRendered?: boolean
 }
 
-export const ChatMessage = ({ message }: { message: MessageWithError }) => {
+interface ChatMessageProps {
+  message: MessageWithError
+}
+
+export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const { t } = useTranslation()
+  const isAssistant = message.role === 'assistant'
+  const isUser = message.role === 'user'
+  const isError = message.isError
+  const [isCopied, setIsCopied] = useState(false)
+
   const handleCopyMarkdown = useCallback(async () => {
     if (message.content) {
       try {
         await navigator.clipboard.writeText(message.content)
+        setIsCopied(true)
+        setTimeout(() => setIsCopied(false), 2000)
       } catch (err) {
         console.error(t('chat.copyError'), err)
       }
     }
-  }, [message, t]) // Added t to dependency array
+  }, [message.content, t])
 
   return (
-    // Outer flex container for icon + bubble
-    <div className={cn(
-      "flex items-start gap-3", // Use gap for spacing between icon and bubble
-      message.role === 'user' ? 'flex-row-reverse' : 'flex-row', // Reverse row for user
-      message.role === 'user' ? 'ml-auto' : 'mr-auto', // Overall alignment
-      'max-w-[90%]' // Apply max-width to the whole row
-    )}>
-      {/* Icon */}
-      <div className={cn(
-        "flex-shrink-0 size-8 rounded-full flex items-center justify-center mt-1", // Icon container styles
-        message.role === 'user' ? 'bg-slate-200 text-slate-600' : 'bg-sladen-blue text-white' // Combined bg/text colors
-      )}>
-        {message.role === 'user' ? (
-          <User className="h-4 w-4" /> /* Ensure size */
-        ) : (
-          <Cog className="h-4 w-4 text-white" /> /* Use Cog icon for testing */
-        )}
-      </div>
+    <div className={`flex items-start space-x-3 ${isUser ? 'justify-end' : ''}`}>
+      {/* Sladen Avatar for Assistant */}
+      {!isUser && (
+        <Avatar className="h-8 w-8 border border-slate-200">
+          <AvatarImage src="/sladen-logo.png" alt="Assistant" />
+          <AvatarFallback><MessageCircleIcon className="h-4 w-4 text-slate-400" /></AvatarFallback>
+        </Avatar>
+      )}
 
-      {/* Message Bubble */}
+      {/* Message Bubble with Sladen colors */}
       <div
-        // Apply bubble styles (padding, rounding, background/text colors)
-        className={cn(
-          'rounded-lg px-4 py-2', // Common styles: padding, rounding 
-          // Removed max-width, ml/mr-auto as they are on the parent now
-          message.isError ? 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' : '', // Error specific
-          message.role === 'assistant' && !message.isError ? 'bg-muted text-foreground' : '', // Assistant specific (ensure text color)
-          message.role === 'user' && !message.isError ? 'text-white' : '' // User specific text color
-        )}
-        // Apply user background color directly via style tag
-        style={message.role === 'user' && !message.isError ? { backgroundColor: '#0A2E4C' } : {}}
+        className={`relative max-w-[75%] rounded-lg px-4 py-2 ${isUser ? 'bg-sladen-teal text-white' : 'bg-slate-100 text-slate-800'} ${isError ? 'border border-red-500 bg-red-50' : ''}`}
       >
         <div className="relative">
           <ReactMarkdown
-            className="prose dark:prose-invert max-w-none text-sm break-words prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+            className="prose dark:prose-invert max-w-none text-sm break-words prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-code:text-sm prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-opacity-10 prose-code:bg-black prose-pre:p-0 prose-pre:bg-transparent"
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeReact]}
             skipHtml={false}
-            components={{
-              code: CodeHighlight,
-              p: ({ children }) => <p className="my-2">{children}</p>,
-              h1: ({ children }) => <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>,
-              h2: ({ children }) => <h2 className="text-lg font-bold mt-4 mb-2">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-base font-bold mt-3 mb-2">{children}</h3>,
-              h4: ({ children }) => <h4 className="text-base font-semibold mt-3 mb-2">{children}</h4>,
-              ul: ({ children }) => <ul className="list-disc pl-5 my-2">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal pl-5 my-2">{children}</ol>,
-              li: ({ children }) => <li className="my-1">{children}</li>
-            }}
+            components={useMemo(() => ({
+              code: (props: any) => (
+                <CodeHighlight
+                  {...props}
+                  renderAsDiagram={message.mermaidRendered ?? false}
+                />
+              ),
+            }), [message.mermaidRendered])}
           >
-            {message.content}
+            {message.content || ''}
           </ReactMarkdown>
+          {isAssistant && message.content && message.content.length > 0 && !isError && (
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-0 right-0 h-6 w-6 text-slate-400 hover:text-slate-600 p-1 opacity-50 hover:opacity-100 transition-opacity duration-150"
+                    onClick={handleCopyMarkdown}
+                  >
+                    {isCopied ? (
+                      <CheckIcon className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <CopyIcon className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isCopied ? 'Copied!' : 'Copy markdown'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-        {message.content === '' && <LoaderIcon className="animate-spin duration-2000" />} {/* Check for empty string specifically */}
+        {isError && (
+          <span className="text-xs text-red-600 block mt-1">{t('chat.messageError', 'Message failed to process')}</span>
+        )}
       </div>
+
+      {isUser && (
+        <Avatar className="h-8 w-8 border border-slate-200">
+          <AvatarFallback><UserIcon className="h-4 w-4 text-slate-400" /></AvatarFallback>
+        </Avatar>
+      )}
     </div>
   )
 }
@@ -98,60 +124,54 @@ interface CodeHighlightProps {
   inline?: boolean
   className?: string
   children?: ReactNode
-  node?: Element // Keep node for inline check
+  node?: Element
+  renderAsDiagram?: boolean
 }
 
-// Helper function remains the same
 const isInlineCode = (node?: Element): boolean => {
   if (!node || !node.children) return false;
   const textContent = node.children
     .filter((child) => child.type === 'text')
     .map((child) => (child as any).value)
     .join('');
-  // Consider inline if it doesn't contain newline or is very short
   return !textContent.includes('\n') || textContent.length < 40;
 };
 
-
-const CodeHighlight = ({ className, children, node, ...props }: CodeHighlightProps) => {
+const CodeHighlight = memo(({ className, children, node, renderAsDiagram = false, ...props }: CodeHighlightProps) => {
   const { theme } = useTheme();
+  const [hasRendered, setHasRendered] = useState(false);
   const match = className?.match(/language-(\w+)/);
   const language = match ? match[1] : undefined;
-  const inline = isInlineCode(node); // Use the helper function
+  const inline = isInlineCode(node);
   const mermaidRef = useRef<HTMLDivElement>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Use ReturnType for better typing
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Handle Mermaid rendering with debounce
   useEffect(() => {
-    // Clear any existing timer when dependencies change
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    if (renderAsDiagram && !hasRendered && language === 'mermaid' && mermaidRef.current) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
 
-    if (language === 'mermaid' && mermaidRef.current) {
-      const container = mermaidRef.current; // Capture ref value for use inside timeout/callbacks
-
-      // Set a new timer to render after a short delay
       debounceTimerRef.current = setTimeout(() => {
-        // Ensure container still exists when timer fires
-        if (!container) return;
+        const container = mermaidRef.current;
+        if (!container) {
+          console.log('Mermaid container ref was null in setTimeout callback.');
+          return;
+        }
+
+        if (hasRendered) return;
 
         try {
-          // Initialize mermaid config (safe to call multiple times)
           mermaid.initialize({
             startOnLoad: false,
             theme: theme === 'dark' ? 'dark' : 'default',
             securityLevel: 'loose',
           });
 
-          // Show loading indicator while processing
           container.innerHTML = '<div class="flex justify-center items-center p-4"><svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>';
 
-          // Preprocess mermaid content
-          const rawContent = String(children).replace(/\n$/, '').trim(); // Trim whitespace as well
+          const rawContent = String(children).replace(/\n$/, '').trim();
 
-          // Heuristic check for potentially complete graph definition
-          // Looks for graph type declaration and some content beyond it.
           const looksPotentiallyComplete = rawContent.length > 10 && (
             rawContent.startsWith('graph') ||
             rawContent.startsWith('sequenceDiagram') ||
@@ -163,19 +183,15 @@ const CodeHighlight = ({ className, children, node, ...props }: CodeHighlightPro
             rawContent.startsWith('erDiagram')
           );
 
-
           if (!looksPotentiallyComplete) {
             console.log('Mermaid content might be incomplete, skipping render attempt:', rawContent);
-            // Keep loading indicator or show a message
-            // container.innerHTML = '<p class="text-sm text-muted-foreground">Waiting for complete diagram...</p>';
-            return; // Don't attempt to render potentially incomplete content
+            return;
           }
 
           const processedContent = rawContent
             .split('\n')
             .map(line => {
               const trimmedLine = line.trim();
-              // Keep subgraph processing
               if (trimmedLine.startsWith('subgraph')) {
                 const parts = trimmedLine.split(' ');
                 if (parts.length > 1) {
@@ -185,89 +201,110 @@ const CodeHighlight = ({ className, children, node, ...props }: CodeHighlightPro
               }
               return trimmedLine;
             })
-            .filter(line => !line.trim().startsWith('linkStyle')) // Keep filtering linkStyle
+            .filter(line => !line.trim().startsWith('linkStyle'))
             .join('\n');
 
           const mermaidId = `mermaid-${Date.now()}`;
           mermaid.render(mermaidId, processedContent)
             .then(({ svg, bindFunctions }) => {
-              // Check ref again inside async callback
-              // Ensure the container is still the one we intended to update
-              if (mermaidRef.current === container) {
-                container.innerHTML = svg;
+              const currentContainer = mermaidRef.current;
+              if (!currentContainer) {
+                console.log('Mermaid container ref was null when promise resolved.');
+                return;
+              }
+              
+              if (!hasRendered) {
+                currentContainer.innerHTML = svg;
+                setHasRendered(true);
                 if (bindFunctions) {
-                  try { // Add try-catch around bindFunctions as it can also throw
-                    bindFunctions(container);
+                  try {
+                    bindFunctions(currentContainer);
                   } catch (bindError) {
                     console.error('Mermaid bindFunctions error:', bindError);
-                    // Optionally display a message in the container
-                    container.innerHTML += '<p class="text-orange-500 text-xs">Diagram interactions might be limited.</p>';
+                    if (mermaidRef.current === currentContainer) { 
+                      currentContainer.innerHTML += '<p class="text-orange-500 text-xs">Diagram interactions might be limited.</p>';
+                    }
                   }
                 }
-              } else {
-                console.log('Mermaid container changed before rendering completed.');
               }
             })
             .catch(error => {
+              const currentContainer = mermaidRef.current;
+              if (!currentContainer) {
+                 console.log('Mermaid container ref was null when promise caught error.');
+                 return;
+              }
+              
               console.error('Mermaid rendering promise error (debounced):', error);
               console.error('Failed content (debounced):', processedContent);
-              if (mermaidRef.current === container) {
-                const errorMessage = error instanceof Error ? error.message : String(error);
-                // Make error display more robust
-                const errorPre = document.createElement('pre');
-                errorPre.className = 'text-red-500 text-xs whitespace-pre-wrap break-words';
-                errorPre.textContent = `Mermaid diagram error: ${errorMessage}\n\nContent:\n${processedContent}`;
-                container.innerHTML = ''; // Clear previous content
-                container.appendChild(errorPre);
-              }
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              const errorPre = document.createElement('pre');
+              errorPre.className = 'text-red-500 text-xs whitespace-pre-wrap break-words';
+              errorPre.textContent = `Mermaid diagram error: ${errorMessage}\n\nContent:\n${processedContent}`;
+              currentContainer.innerHTML = '';
+              currentContainer.appendChild(errorPre);
             });
 
         } catch (error) {
+           const currentContainer = mermaidRef.current;
+           if (!currentContainer) {
+              console.log('Mermaid container ref was null when synchronous error caught.');
+              return;
+           }
+
           console.error('Mermaid synchronous error (debounced):', error);
           console.error('Failed content (debounced):', String(children));
-          if (mermaidRef.current === container) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            const errorPre = document.createElement('pre');
-            errorPre.className = 'text-red-500 text-xs whitespace-pre-wrap break-words';
-            errorPre.textContent = `Mermaid diagram setup error: ${errorMessage}`;
-            container.innerHTML = ''; // Clear previous content
-            container.appendChild(errorPre);
-          }
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorPre = document.createElement('pre');
+          errorPre.className = 'text-red-500 text-xs whitespace-pre-wrap break-words';
+          errorPre.textContent = `Mermaid diagram setup error: ${errorMessage}`;
+          currentContainer.innerHTML = '';
+          currentContainer.appendChild(errorPre);
         }
-      }, 300); // 300ms debounce delay
+      }, 300);
     }
 
-    // Cleanup function to clear the timer
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [language, children, theme]); // Dependencies
+  }, [renderAsDiagram, hasRendered, language, children, theme]);
 
-  // Render based on language type
+  if (language === 'mermaid' && !renderAsDiagram) {
+    return (
+      <SyntaxHighlighter
+        style={theme === 'dark' ? oneDark : oneLight}
+        PreTag="div"
+        language="text"
+        {...props}
+      >
+        {String(children).replace(/\n$/, '')}
+      </SyntaxHighlighter>
+    );
+  }
+
   if (language === 'mermaid') {
-    // Container for Mermaid diagram
     return <div className="mermaid-diagram-container my-4 overflow-x-auto" ref={mermaidRef}></div>;
   }
 
-  // Handle non-Mermaid code blocks
   return !inline ? (
     <SyntaxHighlighter
       style={theme === 'dark' ? oneDark : oneLight}
-      PreTag="div" // Use div for block code
+      PreTag="div"
       language={language}
       {...props}
     >
       {String(children).replace(/\n$/, '')}
     </SyntaxHighlighter>
   ) : (
-    // Handle inline code
     <code
-      className={cn(className, 'mx-1 rounded-sm bg-muted px-1 py-0.5 font-mono text-sm')} // 添加 font-mono 确保使用等宽字体
+      className={cn(className, 'mx-1 rounded-sm bg-muted px-1 py-0.5 font-mono text-sm')}
       {...props}
     >
       {children}
     </code>
   );
-};
+});
+
+CodeHighlight.displayName = 'CodeHighlight';

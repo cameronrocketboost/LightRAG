@@ -247,6 +247,54 @@ const fetchGraph = async (label: string, maxDepth: number, maxNodes: number) => 
   try {
     console.log(`Fetching graph label: ${queryLabel}, depth: ${maxDepth}, nodes: ${maxNodes}`);
     rawData = await queryGraphs(queryLabel, maxDepth, maxNodes);
+
+    // Add checks for rawData and its properties
+    if (!rawData) {
+      console.error('API returned null or undefined data.');
+      toast.error('Failed to fetch graph data: API returned no data.');
+      useGraphStore.getState().setLastSuccessfulQueryLabel(''); // Reset label on failure
+      return null; // Or handle appropriately
+    }
+
+    if (!Array.isArray(rawData.nodes)) {
+        console.error('API response is missing "nodes" array or it is not an array:', rawData);
+        toast.error('Failed to fetch graph data: Invalid node data received.');
+        useGraphStore.getState().setLastSuccessfulQueryLabel(''); // Reset label on failure
+        // Optionally, treat as empty graph or return null
+        rawData.nodes = [];
+    }
+
+    if (!Array.isArray(rawData.edges)) {
+        console.error('API response is missing "edges" array or it is not an array:', rawData);
+        toast.error('Failed to fetch graph data: Invalid edge data received.');
+        useGraphStore.getState().setLastSuccessfulQueryLabel(''); // Reset label on failure
+        // Optionally, treat as empty graph or return null
+        rawData.edges = [];
+    }
+
+    // Validate the structure *after* basic checks and potential initialization
+    // Commenting out the strict validateGraph call for now, as empty graphs might be valid
+    // if (!validateGraph(rawData)) {
+    //   console.error('Graph validation failed');
+    //   toast.error('Failed to fetch graph data: Invalid graph structure received.');
+    //   useGraphStore.getState().setLastSuccessfulQueryLabel(null); // Reset label on failure
+    //   return null;
+    // }
+
+
+    // If nodes or edges are empty after checks/API response, we might still proceed
+    if (rawData.nodes.length === 0) {
+        console.warn('Graph data received, but contains no nodes.');
+        toast.info('Graph query successful, but no nodes found for the given label/depth.');
+        // It's okay to proceed with an empty graph, Sigma can handle it.
+    } else {
+       console.log(`Received ${rawData.nodes.length} nodes and ${rawData.edges.length} edges`);
+    }
+
+
+    // Update last successful query label only if data fetch was structurally sound (even if empty)
+    useGraphStore.getState().setLastSuccessfulQueryLabel(queryLabel);
+
   } catch (e) {
     useBackendState.getState().setErrorMessage(errorMessage(e), 'Query Graphs Error!');
     return null;

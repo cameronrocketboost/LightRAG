@@ -70,4 +70,39 @@ To get the LightRAG system running locally and customize the Web UI to resemble 
 *   **Production Build:** The current setup relies on the dev server and frontend auth bypass. For deployment:
     *   Proper authentication handling would need to be restored/implemented.
     *   A production build of the UI needs to be generated (`npm run build-no-bun`).
-    *   The backend server needs to be configured to serve the built static files (or use a separate web server). 
+    *   The backend server needs to be configured to serve the built static files (or use a separate web server).
+
+## Deployment Notes (Render)
+
+### Backend (Render Web Service)
+
+*   **Service Type:** Use a "Web Service".
+*   **Build Command:** `pip install -r requirements.txt`
+*   **Start Command:** `uvicorn lightrag.api.lightrag_server:app --host 0.0.0.0 --port $PORT --workers 1`
+*   **`requirements.txt`:**
+    *   Ensure this file is in the **project root** and includes **all** necessary dependencies for the server to run, specifically `uvicorn[standard]`, `fastapi`, and any others required by `lightrag.api` or its imports.
+    *   Commit the correct root `requirements.txt` to the repository.
+*   **Environment Variables:**
+    *   `PYTHON_VERSION`: Set to `3.10` (or the version matching your development, e.g., `3.10.13`).
+    *   `LLM_BINDING_API_KEY`, `EMBEDDING_BINDING_API_KEY`: Set your OpenAI API keys.
+    *   `OPENAI_API_BASE`: Often needed, set to `https://api.openai.com/v1`.
+    *   Ensure `AUTH_ACCOUNTS` and `TOKEN_SECRET` are commented out or removed if public/guest access is desired.
+*   **Root Directory:** Leave blank if `requirements.txt` is in the root, otherwise specify the directory containing it.
+*   **Performance:** The free/starter tiers might struggle with memory. Consider upgrading if deployments are slow or failing due to resource limits. Initial deployments can take 5-15 minutes.
+
+### Frontend (Render Static Site)
+
+*   **Service Type:** Use a "Static Site". **Do not** use a Web Service for the frontend.
+*   **Root Directory:** `lightrag_webui` (or the subdirectory containing the frontend code and `package.json`).
+*   **Build Command:** `npm install --legacy-peer-deps && npm run build-no-bun`
+    *   `--legacy-peer-deps` is crucial to resolve dependency conflicts (e.g., `graphology` versions).
+*   **Publish Directory:** `lightrag_webui/dist` (relative to the repository root, ensure this matches the actual output directory).
+*   **Environment Variables (Build Time):**
+    *   `VITE_BACKEND_URL`: Set this to the public URL of your deployed backend service (e.g., `https://your-backend-name.onrender.com`). **Important:** Ensure there are no syntax errors (like extra `@` symbols).
+    *   `NODE_VERSION`: Optionally set a specific Node.js version (e.g., `18.17.0` or `20`) to ensure consistency if build issues arise.
+    *   `NODE_OPTIONS`: If encountering "JavaScript heap out of memory" errors during build, add this variable with a value like `--max-old-space-size=4096` to increase memory.
+*   **Component Files:**
+    *   Ensure all required UI component source files are committed to the repository.
+    *   `shadcn/ui` components (like `avatar`) must be added using the CLI (`npx shadcn@latest add avatar`). If the CLI fails trying to use `bun`, try configuring `lightrag_webui/components.json` to use `npm` (`"packageManager": "npm"`) or manually install the dependency (`npm install @radix-ui/react-avatar`) *before* running `npx shadcn@latest add avatar`. As a last resort, manually copy the component source code from shadcn/ui docs/repo into `lightrag_webui/src/components/ui/`.
+    *   Custom components (like the potentially missing `MarkdownContent.tsx`) must be present in their respective directories (e.g., `lightrag_webui/src/components/markdown/`). Ensure they are restored if accidentally deleted.
+*   **Rewrites/Redirects:** Ensure appropriate rewrite rules are configured (usually automatically handled by Render for SPAs) to direct all paths to `index.html`. 
