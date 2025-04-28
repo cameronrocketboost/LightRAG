@@ -255,6 +255,18 @@ const fetchGraph = async (label: string, maxDepth: number, maxNodes: number) => 
   let rawGraph = null;
 
   if (rawData) {
+    // --- Start Edit: Add checks for nodes and edges ---
+    // Ensure nodes and edges exist and are arrays before proceeding
+    if (!rawData.nodes || !Array.isArray(rawData.nodes)) {
+      console.error('fetchGraph: rawData.nodes is missing or not an array', rawData);
+      rawData.nodes = []; // Initialize as empty array to prevent crash
+    }
+    if (!rawData.edges || !Array.isArray(rawData.edges)) {
+      console.error('fetchGraph: rawData.edges is missing or not an array', rawData);
+      rawData.edges = []; // Initialize as empty array to prevent crash
+    }
+    // --- End Edit ---
+
     const nodeIdMap: Record<string, number> = {}
     const edgeIdMap: Record<string, number> = {}
 
@@ -274,9 +286,12 @@ const fetchGraph = async (label: string, maxDepth: number, maxNodes: number) => 
 
       const source = nodeIdMap[edge.source]
       const target = nodeIdMap[edge.target]
-      if (source !== undefined && source !== undefined) {
-        const sourceNode = rawData.nodes[source]
-        const targetNode = rawData.nodes[target]
+      // --- Start Edit: Add check for source/target node existence ---
+      // Check if source and target nodes exist before accessing degree
+      if (source !== undefined && target !== undefined) {
+        const sourceNode = rawData.nodes[source];
+        const targetNode = rawData.nodes[target];
+      // --- End Edit ---
         if (!sourceNode) {
           console.error(`Source node ${edge.source} is undefined`)
           continue
@@ -288,25 +303,33 @@ const fetchGraph = async (label: string, maxDepth: number, maxNodes: number) => 
         sourceNode.degree += 1
         targetNode.degree += 1
       }
+      // --- Start Edit: Add closing brace for check ---
+      // Closing brace for the source/target existence check
+      }
+      // --- End Edit ---
     }
 
     // generate node size
     let minDegree = Number.MAX_SAFE_INTEGER
     let maxDegree = 0
 
-    for (const node of rawData.nodes) {
-      minDegree = Math.min(minDegree, node.degree)
-      maxDegree = Math.max(maxDegree, node.degree)
-    }
-    const range = maxDegree - minDegree
-    if (range > 0) {
-      const scale = Constants.maxNodeSize - Constants.minNodeSize
+    // --- Start Edit: Add check for nodes array ---
+    if (Array.isArray(rawData.nodes)) { // Check if nodes is an array before iterating
       for (const node of rawData.nodes) {
-        node.size = Math.round(
-          Constants.minNodeSize + scale * Math.pow((node.degree - minDegree) / range, 0.5)
-        )
+        minDegree = Math.min(minDegree, node.degree)
+        maxDegree = Math.max(maxDegree, node.degree)
       }
-    }
+      const range = maxDegree - minDegree
+      if (range > 0) {
+        const scale = Constants.maxNodeSize - Constants.minNodeSize
+        for (const node of rawData.nodes) {
+          node.size = Math.round(
+            Constants.minNodeSize + scale * Math.pow((node.degree - minDegree) / range, 0.5)
+          )
+        }
+      }
+    } // Closing brace for the nodes array check
+    // --- End Edit ---
 
     rawGraph = new RawGraph()
     rawGraph.nodes = rawData.nodes
