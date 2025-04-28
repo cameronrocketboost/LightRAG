@@ -1,5 +1,5 @@
 import Graph, { UndirectedGraph } from 'graphology'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { errorMessage } from '@/lib/utils'
 import * as Constants from '@/lib/constants'
@@ -412,6 +412,8 @@ const useLightrangeGraph = () => {
   const nodeToExpand = useGraphStore.use.nodeToExpand()
   const nodeToPrune = useGraphStore.use.nodeToPrune()
 
+  // --- Add state to track fetch errors ---
+  const [fetchError, setFetchError] = useState<boolean>(false);
 
   // Use ref to track if data has been loaded and initial load
   const dataLoadedRef = useRef(false)
@@ -445,13 +447,14 @@ const useLightrangeGraph = () => {
       state.setLabelsFetchAttempted(false)
       dataLoadedRef.current = false
       initialLoadRef.current = false
+      setFetchError(false); // --- Reset error state on clear ---
     }
   }, [queryLabel, rawGraph, sigmaGraph])
 
   // Graph data fetching logic
   useEffect(() => {
-    // Skip if fetch is already in progress
-    if (fetchInProgressRef.current) {
+    // Skip if fetch is already in progress or if an error occurred for this label
+    if (fetchInProgressRef.current || fetchError) { // --- Check fetchError state ---
       return
     }
 
@@ -499,6 +502,7 @@ const useLightrangeGraph = () => {
 
       // 3. Process data
       dataPromise.then((result) => {
+        setFetchError(false); // --- Reset error on successful fetch start ---
         const state = useGraphStore.getState()
         const data = result?.rawGraph;
 
@@ -587,6 +591,7 @@ const useLightrangeGraph = () => {
         }
       }).catch((error) => {
         console.error('Error fetching graph data:', error)
+        setFetchError(true); // --- Set error state on catch ---
 
         // Reset state on error
         const state = useGraphStore.getState()
@@ -597,7 +602,7 @@ const useLightrangeGraph = () => {
         state.setLastSuccessfulQueryLabel('') // Clear last successful query label on error
       })
     }
-  }, [queryLabel, maxQueryDepth, maxNodes, isFetching, t])
+  }, [queryLabel, maxQueryDepth, maxNodes, isFetching, t, fetchError])
 
   // Handle node expansion
   useEffect(() => {
