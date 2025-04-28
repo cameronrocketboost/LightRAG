@@ -292,10 +292,14 @@ export const queryTextStream = async (
   }
 
   try {
-    const response = await fetch(`${backendBaseUrl}/query/stream`, {
-      method: 'POST',
+    // Construct the CORRECT FULL backend URL, bypassing the Vite proxy for this fetch call
+    const backendHost = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9621';
+    const fullUrl = `${backendHost}/query/stream`; // Use the path confirmed to work: /query/stream
+    
+    const response = await fetch(fullUrl, {
+      method: 'POST', // Use POST as confirmed
       headers: headers,
-      body: JSON.stringify(request),
+      body: JSON.stringify(request), // Use body for POST
     });
 
     if (!response.ok) {
@@ -316,7 +320,7 @@ export const queryTextStream = async (
       } catch { /* ignore */ }
 
       // Format error message similar to axios interceptor for consistency
-      const url = `${backendBaseUrl}/query/stream`;
+      const url = fullUrl; // Use the actual URL used for the fetch
       throw new Error(
         `${response.status} ${response.statusText}\n${JSON.stringify(
           { error: errorBody }
@@ -520,7 +524,8 @@ export const clearCache = async (modes?: string[]): Promise<{
 export const getAuthStatus = async (): Promise<AuthStatusResponse> => {
   try {
     // Add a timeout to the request to prevent hanging
-    const response = await axiosInstance.get('/auth-status', {
+    // Prepend /api/ to the path to match the proxy configuration
+    const response = await axiosInstance.get('/api/auth-status', {
       timeout: 5000, // 5 second timeout
       headers: {
         'Accept': 'application/json' // Explicitly request JSON

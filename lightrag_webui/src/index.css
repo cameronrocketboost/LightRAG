@@ -1,9 +1,19 @@
+/* Remove added @tailwind directives */
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+
 @import 'tailwindcss';
 
 @plugin 'tailwindcss-animate';
 @plugin 'tailwind-scrollbar';
 
 @custom-variant dark (&:is(.dark *));
+
+/* Restore original directives */
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
 
 :root {
   --background: hsl(0 0% 100%);
@@ -39,6 +49,11 @@
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(220 13% 91%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  /* Add Sladen Colors as CSS Variables (HSL format) */
+  --sladen-blue: 209 75% 17%; /* #0A2E4C */
+  --sladen-red: 0 74% 59%;   /* #E24B4B - Adjusted lightness slightly */
+  --sladen-teal: 171 40% 59%;  /* #6FC1B6 */
+  --sladen-peach: 6 100% 92%; /* #FFDAD6 */
 }
 
 .dark {
@@ -166,4 +181,10 @@
   ::-webkit-scrollbar-track {
     background-color: hsl(0 0% 0%);
   }
+}
+
+/* Custom style for Sladen suggestion button hover */
+.sladen-suggestion-button:hover {
+  background-color: #E24B4B !important; /* Sladen Red */
+  color: white !important;
 }
