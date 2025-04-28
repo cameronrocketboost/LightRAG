@@ -12,7 +12,7 @@ import pipmaster as pm
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Literal
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, Query
 from pydantic import BaseModel, Field, field_validator
 
 from lightrag import LightRAG
