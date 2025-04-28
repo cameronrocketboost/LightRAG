@@ -20,6 +20,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
+    /* Explicitly define types to include, excluding problematic ones */
+    "types": ["node", "react"],
+
     /* Paths */
     "baseUrl": ".",
     "paths": {
