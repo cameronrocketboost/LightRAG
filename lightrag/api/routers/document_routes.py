@@ -759,10 +759,13 @@ def create_document_routes(
 
             # Add to background tasks
             background_tasks.add_task(pipeline_index_file, rag, file_path)
+            logger.info(
+                f"Added background task to index file: {file.filename}"
+            )  # Log task addition
 
             return InsertResponse(
                 status="success",
-                message=f"File '{file.filename}' uploaded successfully. Processing will continue in background.",
+                message=f"File '{file.filename}' uploaded successfully. Processing started."
             )
         except Exception as e:
             logger.error(f"Error /documents/upload: {file.filename}: {str(e)}")
