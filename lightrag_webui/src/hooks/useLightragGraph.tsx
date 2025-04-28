@@ -305,7 +305,6 @@ const fetchGraph = async (label: string, maxDepth: number, maxNodes: number) => 
       }
       // --- Start Edit: Add closing brace for check ---
       // Closing brace for the source/target existence check
-      }
       // --- End Edit ---
     }
 
