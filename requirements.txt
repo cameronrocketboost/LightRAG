@@ -23,3 +23,8 @@ xlsxwriter>=3.1.0
 
 
 uvicorn[standard]
+
+    fastapi
+    python-multipart # Often needed by FastAPI for form data/uploads
+    python-dotenv # Already installing, but good to ensure
+    # Add any other direct imports from lightrag/api/lightrag_server.py if they cause errors later
