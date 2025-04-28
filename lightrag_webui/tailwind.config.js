@@ -50,6 +50,10 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        'sladen-blue': 'hsl(var(--sladen-blue))',
+        'sladen-red': 'hsl(var(--sladen-red))',
+        'sladen-teal': 'hsl(var(--sladen-teal))',
+        'sladen-peach': 'hsl(var(--sladen-peach))',
       },
       borderRadius: {
         lg: 'var(--radius)',

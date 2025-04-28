@@ -137,7 +137,7 @@ Integrate Using LightRAG core object
 
 Use the below Python snippet to initialize LightRAG, insert text to it, and perform queries:
 
-```python
+```python -m lightrag.api.lightrag_serverpython
 import os
 import asyncio
 from lightrag import LightRAG, QueryParam

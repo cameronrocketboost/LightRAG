@@ -21,8 +21,8 @@ function NavigationTab({ value, currentTab, children }: NavigationTabProps) {
     <TabsTrigger
       value={value}
       className={cn(
-        'cursor-pointer px-2 py-1 transition-all',
-        currentTab === value ? '!bg-emerald-400 !text-zinc-50' : 'hover:bg-background/60'
+        'cursor-pointer rounded-sm px-3 py-1 text-sm font-medium uppercase transition-all',
+        currentTab === value ? 'bg-sladen-teal text-white' : 'text-slate-300 hover:text-white'
       )}
     >
       {children}
@@ -32,22 +32,18 @@ function NavigationTab({ value, currentTab, children }: NavigationTabProps) {
 
 function TabsNavigation() {
   const currentTab = useSettingsStore.use.currentTab()
-  const { t } = useTranslation()
 
   return (
     <div className="flex h-8 self-center">
-      <TabsList className="h-full gap-2">
+      <TabsList className="h-full gap-2 bg-transparent p-0">
+        <NavigationTab value="chat" currentTab={currentTab}>
+          CHAT
+        </NavigationTab>
         <NavigationTab value="documents" currentTab={currentTab}>
-          {t('header.documents')}
+          DOCUMENTS
         </NavigationTab>
-        <NavigationTab value="knowledge-graph" currentTab={currentTab}>
-          {t('header.knowledgeGraph')}
-        </NavigationTab>
-        <NavigationTab value="retrieval" currentTab={currentTab}>
-          {t('header.retrieval')}
-        </NavigationTab>
-        <NavigationTab value="api" currentTab={currentTab}>
-          {t('header.api')}
+        <NavigationTab value="features" currentTab={currentTab}>
+          FEATURES
         </NavigationTab>
       </TabsList>
     </div>
@@ -67,68 +63,32 @@ export default function SiteHeader() {
   }
 
   return (
-    <header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-10 w-full border-b px-4 backdrop-blur">
-      <div className="min-w-[200px] w-auto flex items-center">
-        <a href={webuiPrefix} className="flex items-center gap-2">
-          <ZapIcon className="size-4 text-emerald-400" aria-hidden="true" />
-          {/* <img src='/logo.png' className="size-4" /> */}
-          <span className="font-bold md:inline-block">{SiteInfo.name}</span>
-        </a>
-        {webuiTitle && (
-          <div className="flex items-center">
-            <span className="mx-1 text-xs text-gray-500 dark:text-gray-400">|</span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="font-medium text-sm cursor-default">
-                    {webuiTitle}
-                  </span>
-                </TooltipTrigger>
-                {webuiDescription && (
-                  <TooltipContent side="bottom">
-                    {webuiDescription}
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
+    <header 
+      className="border-border/40 text-slate-100 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-10 w-full items-center justify-between border-b border-slate-700 px-4 backdrop-blur"
+      style={{ backgroundColor: '#0A2E4C' }}
+    >
+      <div className="flex items-center">
+        <span className="font-bold text-lg text-white">
+            SLADEN
+            <span style={{ color: '#E24B4B' }}>/</span>
+            CHAT
+        </span>
       </div>
 
-      <div className="flex h-10 flex-1 items-center justify-center">
+      <nav className="flex items-center justify-end gap-4">
         <TabsNavigation />
+        
         {isGuestMode && (
-          <div className="ml-2 self-center px-2 py-1 text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-md">
+          <div className="self-center px-2 py-1 text-xs bg-amber-200 text-amber-900 rounded-md">
             {t('login.guestMode', 'Guest Mode')}
           </div>
         )}
-      </div>
-
-      <nav className="w-[200px] flex items-center justify-end">
-        <div className="flex items-center gap-2">
-          {versionDisplay && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">
-              v{versionDisplay}
-            </span>
-          )}
-          <Button variant="ghost" size="icon" side="bottom" tooltip={t('header.projectRepository')}>
-            <a href={SiteInfo.github} target="_blank" rel="noopener noreferrer">
-              <GithubIcon className="size-4" aria-hidden="true" />
-            </a>
-          </Button>
-          <AppSettings />
-          {!isGuestMode && (
-            <Button
-              variant="ghost"
-              size="icon"
-              side="bottom"
-              tooltip={`${t('header.logout')} (${username})`}
-              onClick={handleLogout}
-            >
-              <LogOutIcon className="size-4" aria-hidden="true" />
-            </Button>
-          )}
-        </div>
+        
+        {versionDisplay && (
+          <span className="text-xs text-slate-400">
+            v{versionDisplay}
+          </span>
+        )}
       </nav>
     </header>
   )

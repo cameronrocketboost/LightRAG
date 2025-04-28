@@ -15,7 +15,7 @@ import type { Element } from 'hast'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
-import { LoaderIcon, CopyIcon } from 'lucide-react'
+import { LoaderIcon, CopyIcon, User, Cog } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 export type MessageWithError = Message & {
@@ -35,48 +35,61 @@ export const ChatMessage = ({ message }: { message: MessageWithError }) => {
   }, [message, t]) // Added t to dependency array
 
   return (
-    <div
-      className={`${
-        message.role === 'user'
-          ? 'max-w-[80%] bg-primary text-primary-foreground'
-          : message.isError
-            ? 'w-[90%] bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400'
-            : 'w-[90%] bg-muted'
-      } rounded-lg px-4 py-2`}
-    >
-      <div className="relative">
-        <ReactMarkdown
-          className="prose dark:prose-invert max-w-none text-sm break-words prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeReact]}
-          skipHtml={false}
-          components={{
-            code: CodeHighlight,
-            p: ({ children }) => <p className="my-2">{children}</p>,
-            h1: ({ children }) => <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>,
-            h2: ({ children }) => <h2 className="text-lg font-bold mt-4 mb-2">{children}</h2>,
-            h3: ({ children }) => <h3 className="text-base font-bold mt-3 mb-2">{children}</h3>,
-            h4: ({ children }) => <h4 className="text-base font-semibold mt-3 mb-2">{children}</h4>,
-            ul: ({ children }) => <ul className="list-disc pl-5 my-2">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal pl-5 my-2">{children}</ol>,
-            li: ({ children }) => <li className="my-1">{children}</li>
-          }}
-        >
-          {message.content}
-        </ReactMarkdown>
-        {message.role === 'assistant' && message.content && message.content.length > 0 && ( // Added check for message.content existence
-          <Button
-            onClick={handleCopyMarkdown}
-            className="absolute right-0 bottom-0 size-6 rounded-md opacity-20 transition-opacity hover:opacity-100"
-            tooltip={t('retrievePanel.chatMessage.copyTooltip')}
-            variant="default"
-            size="icon"
-          >
-            <CopyIcon className="size-4" /> {/* Explicit size */}
-          </Button>
+    // Outer flex container for icon + bubble
+    <div className={cn(
+      "flex items-start gap-3", // Use gap for spacing between icon and bubble
+      message.role === 'user' ? 'flex-row-reverse' : 'flex-row', // Reverse row for user
+      message.role === 'user' ? 'ml-auto' : 'mr-auto', // Overall alignment
+      'max-w-[90%]' // Apply max-width to the whole row
+    )}>
+      {/* Icon */}
+      <div className={cn(
+        "flex-shrink-0 size-8 rounded-full flex items-center justify-center mt-1", // Icon container styles
+        message.role === 'user' ? 'bg-slate-200 text-slate-600' : 'bg-sladen-blue text-white' // Combined bg/text colors
+      )}>
+        {message.role === 'user' ? (
+          <User className="h-4 w-4" /> /* Ensure size */
+        ) : (
+          <Cog className="h-4 w-4 text-white" /> /* Use Cog icon for testing */
         )}
       </div>
-      {message.content === '' && <LoaderIcon className="animate-spin duration-2000" />} {/* Check for empty string specifically */}
+
+      {/* Message Bubble */}
+      <div
+        // Apply bubble styles (padding, rounding, background/text colors)
+        className={cn(
+          'rounded-lg px-4 py-2', // Common styles: padding, rounding 
+          // Removed max-width, ml/mr-auto as they are on the parent now
+          message.isError ? 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400' : '', // Error specific
+          message.role === 'assistant' && !message.isError ? 'bg-muted text-foreground' : '', // Assistant specific (ensure text color)
+          message.role === 'user' && !message.isError ? 'text-white' : '' // User specific text color
+        )}
+        // Apply user background color directly via style tag
+        style={message.role === 'user' && !message.isError ? { backgroundColor: '#0A2E4C' } : {}}
+      >
+        <div className="relative">
+          <ReactMarkdown
+            className="prose dark:prose-invert max-w-none text-sm break-words prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeReact]}
+            skipHtml={false}
+            components={{
+              code: CodeHighlight,
+              p: ({ children }) => <p className="my-2">{children}</p>,
+              h1: ({ children }) => <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-lg font-bold mt-4 mb-2">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-base font-bold mt-3 mb-2">{children}</h3>,
+              h4: ({ children }) => <h4 className="text-base font-semibold mt-3 mb-2">{children}</h4>,
+              ul: ({ children }) => <ul className="list-disc pl-5 my-2">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal pl-5 my-2">{children}</ol>,
+              li: ({ children }) => <li className="my-1">{children}</li>
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
+        {message.content === '' && <LoaderIcon className="animate-spin duration-2000" />} {/* Check for empty string specifically */}
+      </div>
     </div>
   )
 }
