@@ -1,7 +1,12 @@
 import { ButtonVariantType } from '@/components/ui/Button'
 
 export const webuiPrefix = '/webui/'
-export const backendBaseUrl = webuiPrefix
+
+// --- Start Edit: Hardcode backend URL ---
+// Temporarily hardcode the backend URL for immediate deployment
+export const backendBaseUrl = 'https://dockerbackend-cb2g.onrender.com';
+// export const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || webuiPrefix; // Original logic commented out
+// --- End Edit ---
 
 export const controlButtonVariant: ButtonVariantType = 'ghost'
 
