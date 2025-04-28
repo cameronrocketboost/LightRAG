@@ -1,8 +1,7 @@
-import { defineConfig, loadEnv } from 'vite'
 import path from 'path'
-import { webuiPrefix } from './src/lib/constants'
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
+import { defineConfig, loadEnv } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {

@@ -1,14 +1,9 @@
-import Button from '@/components/ui/Button'
-import { SiteInfo, webuiPrefix } from '@/lib/constants'
-import AppSettings from '@/components/AppSettings'
 import { TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/state'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { navigationService } from '@/services/navigation'
-import { ZapIcon, GithubIcon, LogOutIcon } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 
 interface NavigationTabProps {
   value: string
@@ -45,22 +40,20 @@ function TabsNavigation() {
         <NavigationTab value="features" currentTab={currentTab}>
           FEATURES
         </NavigationTab>
+        <NavigationTab value="knowledge-graph" currentTab={currentTab}>
+          GRAPH
+        </NavigationTab>
       </TabsList>
     </div>
   )
 }
 
 export default function SiteHeader() {
-  const { t } = useTranslation()
-  const { isGuestMode, coreVersion, apiVersion, username, webuiTitle, webuiDescription } = useAuthStore()
+  const { coreVersion, apiVersion, username } = useAuthStore()
 
   const versionDisplay = (coreVersion && apiVersion)
     ? `${coreVersion}/${apiVersion}`
     : null;
-
-  const handleLogout = () => {
-    navigationService.navigateToLogin();
-  }
 
   return (
     <header 
@@ -78,15 +71,15 @@ export default function SiteHeader() {
       <nav className="flex items-center justify-end gap-4">
         <TabsNavigation />
         
-        {isGuestMode && (
-          <div className="self-center px-2 py-1 text-xs bg-amber-200 text-amber-900 rounded-md">
-            {t('login.guestMode', 'Guest Mode')}
-          </div>
-        )}
-        
         {versionDisplay && (
           <span className="text-xs text-slate-400">
             v{versionDisplay}
+          </span>
+        )}
+        
+        {username && (
+          <span className="text-sm text-slate-300">
+            {username}
           </span>
         )}
       </nav>
