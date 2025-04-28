@@ -28,6 +28,10 @@ export default function ThemeProvider({ children, ...props }: ThemeProviderProps
     const root = window.document.documentElement
     root.classList.remove('light', 'dark')
 
+    // Force light mode regardless of stored theme or system preference
+    root.classList.add('light')
+
+    /* --- START ORIGINAL CODE COMMENTED OUT ---
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       const handleChange = (e: MediaQueryListEvent) => {
@@ -42,10 +46,11 @@ export default function ThemeProvider({ children, ...props }: ThemeProviderProps
     } else {
       root.classList.add(theme)
     }
-  }, [theme])
+    --- END ORIGINAL CODE COMMENTED OUT --- */
+  }, [theme]) // Keep dependency array for consistency, though theme is no longer used directly here
 
   const value = {
-    theme,
+    theme: 'light' as Theme, // Report theme as light
     setTheme
   }
 
