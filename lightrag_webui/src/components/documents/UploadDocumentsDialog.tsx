@@ -103,6 +103,10 @@ export default function UploadDocumentsDialog({ onDocumentsUploaded }: UploadDoc
               }))
             })
 
+            // --- Start Edit: Log the API result ---
+            console.log('Upload API Result:', result);
+            // --- End Edit ---
+
             if (result.status === 'duplicated') {
               uploadErrors[file.name] = t('documentPanel.uploadDocuments.fileUploader.duplicateFile')
               setFileErrors(prev => ({
