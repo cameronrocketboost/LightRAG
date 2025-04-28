@@ -522,61 +522,10 @@ export const clearCache = async (modes?: string[]): Promise<{
 }
 
 export const getAuthStatus = async (): Promise<AuthStatusResponse> => {
-  try {
-    // Add a timeout to the request to prevent hanging
-    // Prepend /api/ to the path to match the proxy configuration
-    const response = await axiosInstance.get('/api/auth-status', {
-      timeout: 5000, // 5 second timeout
-      headers: {
-        'Accept': 'application/json' // Explicitly request JSON
-      }
-    });
-
-    // Check if response is HTML (which indicates a redirect or wrong endpoint)
-    const contentType = response.headers['content-type'] || '';
-    if (contentType.includes('text/html')) {
-      console.warn('Received HTML response instead of JSON for auth-status endpoint');
-      return {
-        auth_configured: true,
-        auth_mode: 'enabled'
-      };
-    }
-
-    // Strict validation of the response data
-    if (response.data &&
-        typeof response.data === 'object' &&
-        'auth_configured' in response.data &&
-        typeof response.data.auth_configured === 'boolean') {
-
-      // For unconfigured auth, ensure we have an access token
-      if (!response.data.auth_configured) {
-        if (response.data.access_token && typeof response.data.access_token === 'string') {
-          return response.data;
-        } else {
-          console.warn('Auth not configured but no valid access token provided');
-        }
-      } else {
-        // For configured auth, just return the data
-        return response.data;
-      }
-    }
-
-    // If response data is invalid but we got a response, log it
-    console.warn('Received invalid auth status response:', response.data);
-
-    // Default to auth configured if response is invalid
-    return {
-      auth_configured: true,
-      auth_mode: 'enabled'
-    };
-  } catch (error) {
-    // If the request fails, assume authentication is configured
-    console.error('Failed to get auth status:', errorMessage(error));
-    return {
-      auth_configured: true,
-      auth_mode: 'enabled'
-    };
-  }
+  const response = await axiosInstance.get('/auth-status', {
+    // headers: token ? { Authorization: `Bearer ${token}` } : {}
+  })
+  return response.data
 }
 
 export const getPipelineStatus = async (): Promise<PipelineStatusResponse> => {
