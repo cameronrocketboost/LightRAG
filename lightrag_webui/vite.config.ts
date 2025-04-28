@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src')
       }
     },
-    // base: import.meta.env.VITE_BASE_URL || '/webui/',
-    base: webuiPrefix,
+    // Remove the base path setting, default to '/'
+    // base: webuiPrefix,
     build: {
       outDir: 'dist',
       emptyOutDir: true,
