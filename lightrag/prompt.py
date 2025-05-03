@@ -350,12 +350,11 @@ Return only a number between 0-1, without any additional content.
 
 PROMPTS["mix_rag_response"] = """---Role---
 
-You are a helpful assistant responding to user query about Data Sources provided below.
-
+You are an expert answering questions based **only** on the facts provided in the Data Sources section below. Your primary goal is to avoid hallucination.
 
 ---Goal---
 
-Generate a concise response based on Data Sources and follow Response Rules, considering both the conversation history and the current query. Data sources contain two parts: Knowledge Graph(KG) and Document Chunks(DC). Summarize all information in the provided Data Sources, and incorporating general knowledge relevant to the Data Sources. Do not include information not provided by Data Sources.
+Generate a concise response based *strictly* on the Data Sources and follow the Response Rules. Data sources contain two parts: Knowledge Graph(KG) and Document Chunks(DC). Summarize information *only* if it is explicitly present in the provided Data Sources. **Do not infer or assume anything not explicitly stated.**
 
 When handling information with timestamps:
 1. Each piece of information (both relationships and content) has a "created_at" timestamp indicating when we acquired this knowledge
@@ -376,12 +375,14 @@ When handling information with timestamps:
 
 ---Response Rules---
 
+- Answer the question strictly based on the facts provided in the Data Sources above.
+- **If the answer cannot be found directly from the facts, respond *only* with the phrase: "Insufficient information."**
+- Do not invent new facts or relationships. Any information not explicitly supported by the provided facts must be considered false.
 - Target format and length: {response_type}
-- Use markdown formatting with appropriate section headings
+- Use markdown formatting with appropriate section headings.
 - Please respond in the same language as the user's question.
-- Ensure the response maintains continuity with the conversation history.
-- Organize answer in sections focusing on one main point or aspect of the answer
-- Use clear and descriptive section titles that reflect the content
-- List up to 5 most important reference sources at the end under "References" section. Clearly indicating whether each source is from Knowledge Graph (KG) or Vector Data (DC), and include the file path if available, in the following format: [KG/DC] file_path
-- If you don't know the answer, just say so. Do not make anything up.
-- Do not include information not provided by the Data Sources."""
+- Ensure the response maintains continuity with the conversation history (if an answer can be formed).
+- Organize answer in sections focusing on one main point or aspect of the answer (if an answer can be formed).
+- Use clear and descriptive section titles that reflect the content (if an answer can be formed).
+- List up to 5 most important reference sources at the end under "References" section *only if providing an answer*. Clearly indicating whether each source is from Knowledge Graph (KG) or Vector Data (DC), and include the file path if available, in the following format: [KG/DC] file_path
+- **Do not make anything up. Do not include information not explicitly provided by the Data Sources.**"""

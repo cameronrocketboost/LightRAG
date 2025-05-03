@@ -260,6 +260,10 @@ export default function ChatView() {
 
   // console.log('Rendering ChatView. showModePopup:', showModePopup); // REMOVE DEBUG LOG
 
+  // --- Start Debug: Log messages on render --- 
+  console.log('Rendering ChatView. Current messages:', messages);
+  // --- End Debug ---
+
   return (
     <div className="flex h-full flex-col relative bg-white"> {/* Keep white background */}
       {/* Remove QuerySettings Component */}
@@ -317,6 +321,32 @@ export default function ChatView() {
       ) : (
         // Message display area when messages exist
         <div ref={messagesContainerRef} className="flex flex-col flex-1 overflow-y-auto py-4 px-16 pb-[180px] bg-white space-y-3"> {/* Changed p-4 to py-4 px-16 */}
+          {messages.length === 0 && !isLoading && (
+            <div className="text-center text-gray-500 mt-10">
+              <h2 className="text-2xl font-semibold mb-2">SLADEN/CHAT</h2>
+              <p className="mb-4">
+                Simply upload your documents (PDFs, DOCX, TXT, and more) and start a conversation. Sladen Chat uses advanced AI, including Knowledge Graphs, to understand your data deeply and provide accurate, context-aware answers.
+                <br />
+                <span className="text-sm italic">For best results combining document search and knowledge graph connections, type `/` and select the `mix` mode.</span>
+              </p>
+              {/* Suggested Prompts Section */}
+              <div className="mt-8">
+                <p className="mb-2 font-medium">Try asking:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {suggestedPrompts.map((prompt, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSuggestionClick(prompt)}
+                    >
+                      {prompt}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {messages.map((msg, index) => (
             <ChatMessage key={index} message={msg} />
           ))}
