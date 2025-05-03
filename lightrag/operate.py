@@ -7,6 +7,7 @@ import re
 import os
 from typing import Any, AsyncIterator
 from collections import Counter, defaultdict
+import logging
 
 from .utils import (
     logger,
@@ -1061,6 +1062,33 @@ async def extract_keywords_only(
     return hl_keywords, ll_keywords
 
 
+def format_kg_context(context: str | None) -> str:
+    """Formats raw KG context string into more readable sentences."""
+    if not context or context.strip() == "":
+        return "No relevant knowledge graph information found."
+    
+    # Basic formatting: Assume facts are separated by newlines
+    # Try to turn "Subject Predicate Object" lines into simple sentences.
+    # This is a placeholder and might need refinement based on actual context structure.
+    lines = context.strip().split('\n')
+    formatted_lines = []
+    for line in lines:
+        parts = line.strip().split() # Simple split, may need adjustment
+        if len(parts) >= 3:
+             # Attempt basic sentence structure
+             subject = parts[0]
+             predicate = ' '.join(parts[1:-1])
+             object_ = parts[-1]
+             # Basic sentence structure, might need refinement based on actual data
+             formatted_lines.append(f"- {subject} {predicate} {object_}.")
+        elif line.strip(): # Keep non-empty lines that don't fit the pattern
+            formatted_lines.append(f"- {line.strip()}")
+
+    if not formatted_lines:
+        return "No processable knowledge graph information found."
+        
+    return "\n".join(formatted_lines)
+
 async def mix_kg_vector_query(
     query: str,
     knowledge_graph_inst: BaseGraphStorage,
@@ -1216,17 +1244,39 @@ async def mix_kg_vector_query(
         get_kg_context(), get_vector_context()
     )
 
-    # 4. Merge contexts
-    if kg_context is None and vector_context is None:
-        return PROMPTS["fail_response"]
+    # --- MODIFICATION START ---
+    # 4. Format KG context and perform Pre-Checks
+    formatted_kg_context = format_kg_context(kg_context)
+    
+    # Define placeholder/empty messages
+    kg_empty_messages = {
+        "No relevant knowledge graph information found.",
+        "No processable knowledge graph information found.",
+        None
+    }
+    vector_empty_messages = {
+        "No relevant text information found", 
+        None
+    }
+    
+    is_kg_empty = formatted_kg_context in kg_empty_messages or not formatted_kg_context.strip()
+    is_vector_empty = vector_context in vector_empty_messages or (isinstance(vector_context, str) and not vector_context.strip())
+
+    # Pre-check: If BOTH contexts are effectively empty, return insufficient info
+    if is_kg_empty and is_vector_empty:
+        logger.warning("Both KG and Vector contexts are empty or insufficient. Returning early.")
+        # Use the specific phrase from the prompt
+        return "Insufficient information."
+    # --- MODIFICATION END ---
 
     if query_param.only_need_context:
+        # Use the formatted KG context here as well
         context_str = f"""
         -----Knowledge Graph Context-----
-        {kg_context if kg_context else "No relevant knowledge graph information found"}
+        {formatted_kg_context}
 
         -----Vector Context-----
-        {vector_context if vector_context else "No relevant text information found"}
+        {vector_context if not is_vector_empty else 'No relevant text information found'}
         """.strip()
         return context_str
 
@@ -1234,12 +1284,9 @@ async def mix_kg_vector_query(
     sys_prompt = (
         system_prompt if system_prompt else PROMPTS["mix_rag_response"]
     ).format(
-        kg_context=kg_context
-        if kg_context
-        else "No relevant knowledge graph information found",
-        vector_context=vector_context
-        if vector_context
-        else "No relevant text information found",
+        # Use formatted KG context and handle potentially empty vector context
+        kg_context=formatted_kg_context,
+        vector_context=vector_context if not is_vector_empty else "No relevant text information found",
         response_type=query_param.response_type,
         history=history_context,
     )

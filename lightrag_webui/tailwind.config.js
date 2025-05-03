@@ -1,3 +1,5 @@
+
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
@@ -273,4 +275,4 @@ export default {
     import('tailwindcss-animate').then(module => module.default),
     import('@tailwindcss/typography').then(module => module.default),
   ],
-}
+};
